@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendário — LLUCENA Infraestrutura</title>
+<link rel="icon" href="assets/simbolo-colorido.png">
+<style>
+  :root{
+    --azul:#2D4976;
+    --azul-escuro:#233A5F;
+    --azul-claro:#E8EDF5;
+    --vermelho:#EE3537;
+    --vermelho-claro:#FDEAEA;
+    --cinza:#5A6675;
+    --borda:#D9E0EA;
+    --fundo:#F4F6FA;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Georgia,'Times New Roman',serif}
+  body{background:var(--fundo);color:#1E2A3A;min-height:100vh}
+
+  header{background:var(--azul);color:#fff;padding:14px 28px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  header img{height:44px}
+  header .titulo{font-size:1.15rem;letter-spacing:.5px;border-left:3px solid var(--vermelho);padding-left:16px}
+  header .acoes{margin-left:auto;display:flex;gap:10px}
+  .btn{border:none;border-radius:6px;padding:9px 16px;font-size:.95rem;cursor:pointer;font-family:inherit}
+  .btn-vermelho{background:var(--vermelho);color:#fff}
+  .btn-vermelho:hover{background:#d42b2d}
+  .btn-claro{background:rgba(255,255,255,.15);color:#fff}
+  .btn-claro:hover{background:rgba(255,255,255,.28)}
+  .btn-azul{background:var(--azul);color:#fff}
+  .btn-azul:hover{background:var(--azul-escuro)}
+  .btn-borda{background:#fff;color:var(--azul);border:1px solid var(--borda)}
+
+  main{max-width:1200px;margin:24px auto;padding:0 20px;display:grid;grid-template-columns:1fr 300px;gap:20px}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+
+  .cartao{background:#fff;border:1px solid var(--borda);border-radius:10px;box-shadow:0 1px 4px rgba(45,73,118,.07)}
+
+  .cal-topo{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:2px solid var(--vermelho)}
+  .cal-topo h2{color:var(--azul);font-size:1.35rem;flex:1;text-transform:capitalize}
+  .nav-btn{background:var(--azul-claro);color:var(--azul);border:none;border-radius:6px;width:34px;height:34px;font-size:1.1rem;cursor:pointer}
+  .nav-btn:hover{background:var(--azul);color:#fff}
+
+  .semana,.grade{display:grid;grid-template-columns:repeat(7,1fr)}
+  .semana div{padding:10px 6px;text-align:center;font-size:.8rem;color:var(--cinza);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--borda)}
+  .dia{min-height:96px;border-right:1px solid var(--borda);border-bottom:1px solid var(--borda);padding:6px;cursor:pointer;position:relative;transition:background .15s}
+  .dia:nth-child(7n){border-right:none}
+  .dia:hover{background:var(--azul-claro)}
+  .dia.fora{background:#FAFBFD;color:#B6BFCC;cursor:default}
+  .dia.fora:hover{background:#FAFBFD}
+  .dia .num{font-size:.85rem;font-weight:bold;color:var(--azul)}
+  .dia.fora .num{color:#B6BFCC}
+  .dia.hoje .num{background:var(--vermelho);color:#fff;border-radius:50%;display:inline-flex;width:24px;height:24px;align-items:center;justify-content:center}
+  .chip{display:block;font-size:.72rem;margin-top:3px;padding:2px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip.reuniao{background:var(--azul-claro);color:var(--azul);border-left:3px solid var(--azul)}
+  .chip.lembrete{background:var(--vermelho-claro);color:#B02224;border-left:3px solid var(--vermelho)}
+
+  .lateral h3{color:var(--azul);padding:16px 18px 10px;border-bottom:2px solid var(--vermelho);font-size:1.05rem}
+  .lista{padding:10px 14px;max-height:520px;overflow-y:auto}
+  .evento{border:1px solid var(--borda);border-radius:8px;padding:10px 12px;margin-bottom:10px;position:relative}
+  .evento .tipo{font-size:.68rem;text-transform:uppercase;letter-spacing:1px;padding:2px 8px;border-radius:10px}
+  .evento .tipo.reuniao{background:var(--azul-claro);color:var(--azul)}
+  .evento .tipo.lembrete{background:var(--vermelho-claro);color:#B02224}
+  .evento h4{color:var(--azul);margin:6px 0 3px;font-size:.98rem}
+  .evento .quando{font-size:.82rem;color:var(--cinza)}
+  .evento .desc{font-size:.85rem;margin-top:4px;color:#33404F}
+  .evento .excluir{position:absolute;top:8px;right:10px;background:none;border:none;color:#B6BFCC;cursor:pointer;font-size:1rem}
+  .evento .excluir:hover{color:var(--vermelho)}
+  .vazio{color:var(--cinza);font-size:.9rem;padding:14px;text-align:center}
+
+  .modal-fundo{display:none;position:fixed;inset:0;background:rgba(30,42,58,.55);z-index:50;align-items:center;justify-content:center;padding:16px}
+  .modal-fundo.aberto{display:flex}
+  .modal{background:#fff;border-radius:12px;width:100%;max-width:440px;overflow:hidden}
+  .modal .cabecalho{background:var(--azul);color:#fff;padding:14px 20px;display:flex;align-items:center}
+  .modal .cabecalho img{height:26px;margin-right:12px}
+  .modal .cabecalho h3{font-size:1.05rem;flex:1}
+  .modal .cabecalho button{background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer}
+  .modal .corpo{padding:20px}
+  .campo{margin-bottom:14px}
+  .campo label{display:block;font-size:.85rem;color:var(--azul);margin-bottom:5px;font-weight:bold}
+  .campo input,.campo select,.campo textarea{width:100%;padding:9px 10px;border:1px solid var(--borda);border-radius:6px;font-size:.95rem;font-family:inherit}
+  .campo input:focus,.campo select:focus,.campo textarea:focus{outline:2px solid var(--azul);border-color:var(--azul)}
+  .linha2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .modal .rodape{padding:0 20px 20px;display:flex;gap:10px;justify-content:flex-end}
+  .dica{font-size:.78rem;color:var(--cinza);margin-top:4px}
+
+  #aviso{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--azul);color:#fff;padding:12px 22px;border-radius:8px;display:none;z-index:99;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+  #aviso.erro{background:var(--vermelho)}
+
+  footer{text-align:center;padding:22px;color:var(--cinza);font-size:.8rem}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="assets/logo-branco.png" alt="LLUCENA Infraestrutura">
+  <div class="titulo">Calendário de Reuniões e Lembretes</div>
+  <div class="acoes">
+    <button class="btn btn-claro" onclick="abrirConfig()">⚙ Configurar</button>
+    <button class="btn btn-vermelho" onclick="abrirNovo()">+ Novo evento</button>
+  </div>
+</header>
+
+<main>
+  <section class="cartao">
+    <div class="cal-topo">
+      <button class="nav-btn" onclick="mudarMes(-1)">‹</button>
+      <h2 id="mesAno"></h2>
+      <button class="btn btn-borda" onclick="irHoje()">Hoje</button>
+      <button class="nav-btn" onclick="mudarMes(1)">›</button>
+    </div>
+    <div class="semana">
+      <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+    </div>
+    <div class="grade" id="grade"></div>
+  </section>
+
+  <aside class="cartao lateral">
+    <h3>Próximos eventos</h3>
+    <div class="lista" id="lista"></div>
+  </aside>
+</main>
+
+<footer>LLUCENA Infraestrutura · Calendário interno</footer>
+
+<!-- Modal: novo evento -->
+<div class="modal-fundo" id="modalNovo">
+  <div class="modal">
+    <div class="cabecalho">
+      <img src="assets/simbolo-branco.png" alt="">
+      <h3>Novo evento</h3>
+      <button onclick="fechar('modalNovo')">×</button>
+    </div>
+    <div class="corpo">
+      <div class="campo">
+        <label>Tipo</label>
+        <select id="fTipo">
+          <option value="reuniao">Reunião</option>
+          <option value="lembrete">Lembrete</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Título</label>
+        <input id="fTitulo" placeholder="Ex.: Reunião com equipe de obra">
+      </div>
+      <div class="linha2">
+        <div class="campo">
+          <label>Data</label>
+          <input id="fData" type="date">
+        </div>
+        <div class="campo">
+          <label>Hora</label>
+          <input id="fHora" type="time">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Descrição (opcional)</label>
+        <textarea id="fDesc" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="rodape">
+      <button class="btn btn-borda" onclick="fechar('modalNovo')">Cancelar</button>
+      <button class="btn btn-azul" id="btnSalvar" onclick="salvarEvento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: configuração -->
+<div class="modal-fundo" id="modalConfig">
+  <div class="modal">
+    <div class="cabecalho">
+      <img src="assets/simbolo-branco.png" alt="">
+      <h3>Configuração do GitHub</h3>
+      <button onclick="fechar('modalConfig')">×</button>
+    </div>
+    <div class="corpo">
+      <div class="campo">
+        <label>Repositório (usuário/repo)</label>
+        <input id="cRepo" placeholder="ex.: minhaempresa/calendario">
+        <div class="dica">Detectado automaticamente quando publicado no GitHub Pages.</div>
+      </div>
+      <div class="campo">
+        <label>Branch</label>
+        <input id="cBranch" placeholder="main" value="main">
+      </div>
+      <div class="campo">
+        <label>Token de acesso (fine-grained PAT)</label>
+        <input id="cToken" type="password" placeholder="github_pat_...">
+        <div class="dica">Necessário apenas para <b>adicionar/excluir</b> eventos. Crie em GitHub → Settings → Developer settings → Fine-grained tokens, com permissão <b>Contents: Read and write</b> só neste repositório. Fica salvo apenas neste navegador.</div>
+      </div>
+    </div>
+    <div class="rodape">
+      <button class="btn btn-borda" onclick="fechar('modalConfig')">Cancelar</button>
+      <button class="btn btn-azul" onclick="salvarConfig()">Salvar configuração</button>
+    </div>
+  </div>
+</div>
+
+<div id="aviso"></div>
+
+<script>
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+let hoje=new Date(), ano=hoje.getFullYear(), mes=hoje.getMonth();
+let eventos=[], sha=null;
+
+const cfg={
+  get repo(){ return localStorage.getItem('cal_repo')||autoRepo(); },
+  get branch(){ return localStorage.getItem('cal_branch')||'main'; },
+  get token(){ return localStorage.getItem('cal_token')||''; }
+};
+
+function autoRepo(){
+  // Em usuario.github.io/repo → deduz usuario/repo
+  const h=location.hostname;
+  if(h.endsWith('.github.io')){
+    const user=h.split('.')[0];
+    const parte=location.pathname.split('/').filter(Boolean)[0];
+    if(parte) return user+'/'+parte;
+    return user+'/'+user+'.github.io';
+  }
+  return '';
+}
+
+function aviso(msg,erro){
+  const el=document.getElementById('aviso');
+  el.textContent=msg; el.className=erro?'erro':''; el.style.display='block';
+  setTimeout(()=>el.style.display='none',4000);
+}
+
+// ---------- Carregar eventos ----------
+async function carregar(){
+  // 1ª opção: API do GitHub (sempre atualizada, guarda o sha para gravação)
+  if(cfg.repo){
+    try{
+      const r=await fetch(`https://api.github.com/repos/${cfg.repo}/contents/events.json?ref=${cfg.branch}&t=${Date.now()}`,
+        {headers: cfg.token?{Authorization:'Bearer '+cfg.token}:{}}
+      );
+      if(r.ok){
+        const j=await r.json();
+        sha=j.sha;
+        eventos=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(j.content.replace(/\n/g,'')),c=>c.charCodeAt(0)))).events||[];
+        render(); return;
+      }
+    }catch(e){/* segue para fallback */}
+  }
+  // 2ª opção: arquivo local (visualização)
+  try{
+    const r=await fetch('events.json?t='+Date.now());
+    if(r.ok){ eventos=(await r.json()).events||[]; }
+  }catch(e){ eventos=[]; }
+  render();
+}
+
+// ---------- Gravar no GitHub ----------
+async function gravar(msgCommit){
+  if(!cfg.repo||!cfg.token){
+    abrirConfig();
+    aviso('Configure o repositório e o token para salvar no GitHub.',true);
+    return false;
+  }
+  const conteudo=JSON.stringify({events:eventos},null,2);
+  const b64=btoa(String.fromCharCode(...new TextEncoder().encode(conteudo)));
+  const corpo={message:msgCommit,content:b64,branch:cfg.branch};
+  if(sha) corpo.sha=sha;
+  const r=await fetch(`https://api.github.com/repos/${cfg.repo}/contents/events.json`,{
+    method:'PUT',
+    headers:{Authorization:'Bearer '+cfg.token,'Content-Type':'application/json'},
+    body:JSON.stringify(corpo)
+  });
+  if(r.ok){ sha=(await r.json()).content.sha; return true; }
+  const err=await r.json().catch(()=>({}));
+  aviso('Erro ao salvar: '+(err.message||r.status),true);
+  return false;
+}
+
+// ---------- Calendário ----------
+function render(){
+  document.getElementById('mesAno').textContent=MESES[mes]+' de '+ano;
+  const grade=document.getElementById('grade'); grade.innerHTML='';
+  const primeiro=new Date(ano,mes,1).getDay();
+  const diasMes=new Date(ano,mes+1,0).getDate();
+  const diasAnt=new Date(ano,mes,0).getDate();
+  const hojeStr=dataStr(new Date());
+  const total=Math.ceil((primeiro+diasMes)/7)*7;
+  for(let i=0;i<total;i++){
+    const d=document.createElement('div');
+    let num,ds,fora=false;
+    if(i<primeiro){ num=diasAnt-primeiro+1+i; fora=true; ds=dataStr(new Date(ano,mes-1,num)); }
+    else if(i<primeiro+diasMes){ num=i-primeiro+1; ds=dataStr(new Date(ano,mes,num)); }
+    else{ num=i-primeiro-diasMes+1; fora=true; ds=dataStr(new Date(ano,mes+1,num)); }
+    d.className='dia'+(fora?' fora':'')+(ds===hojeStr?' hoje':'');
+    d.innerHTML='<span class="num">'+num+'</span>';
+    eventos.filter(e=>e.date===ds).sort((a,b)=>(a.time||'').localeCompare(b.time||'')).forEach(e=>{
+      const c=document.createElement('span');
+      c.className='chip '+e.type;
+      c.textContent=(e.time?e.time+' ':'')+e.title;
+      c.title=e.title+(e.description?' — '+e.description:'');
+      d.appendChild(c);
+    });
+    if(!fora) d.onclick=()=>abrirNovo(ds);
+    grade.appendChild(d);
+  }
+  renderLista();
+}
+
+function renderLista(){
+  const el=document.getElementById('lista'); el.innerHTML='';
+  const agora=dataStr(new Date());
+  const prox=eventos.filter(e=>e.date>=agora).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+  if(!prox.length){ el.innerHTML='<div class="vazio">Nenhum evento futuro.</div>'; return; }
+  prox.forEach(e=>{
+    const d=document.createElement('div');
+    d.className='evento';
+    const [Y,M,D]=e.date.split('-');
+    d.innerHTML=`<span class="tipo ${e.type}">${e.type==='reuniao'?'Reunião':'Lembrete'}</span>
+      <button class="excluir" title="Excluir">🗑</button>
+      <h4></h4>
+      <div class="quando">${D}/${M}/${Y}${e.time?' às '+e.time:''}</div>
+      ${e.description?'<div class="desc"></div>':''}`;
+    d.querySelector('h4').textContent=e.title;
+    if(e.description) d.querySelector('.desc').textContent=e.description;
+    d.querySelector('.excluir').onclick=()=>excluir(e.id);
+    el.appendChild(d);
+  });
+}
+
+function dataStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function mudarMes(n){ mes+=n; if(mes<0){mes=11;ano--;} if(mes>11){mes=0;ano++;} render(); }
+function irHoje(){ const h=new Date(); ano=h.getFullYear(); mes=h.getMonth(); render(); }
+
+// ---------- Ações ----------
+function abrirNovo(dataPre){
+  document.getElementById('fData').value=(typeof dataPre==='string')?dataPre:dataStr(new Date());
+  document.getElementById('fTitulo').value='';
+  document.getElementById('fHora').value='';
+  document.getElementById('fDesc').value='';
+  document.getElementById('modalNovo').classList.add('aberto');
+  document.getElementById('fTitulo').focus();
+}
+function abrirConfig(){
+  document.getElementById('cRepo').value=cfg.repo;
+  document.getElementById('cBranch').value=cfg.branch;
+  document.getElementById('cToken').value=cfg.token;
+  document.getElementById('modalConfig').classList.add('aberto');
+}
+function fechar(id){ document.getElementById(id).classList.remove('aberto'); }
+
+function salvarConfig(){
+  localStorage.setItem('cal_repo',document.getElementById('cRepo').value.trim());
+  localStorage.setItem('cal_branch',document.getElementById('cBranch').value.trim()||'main');
+  localStorage.setItem('cal_token',document.getElementById('cToken').value.trim());
+  fechar('modalConfig');
+  aviso('Configuração salva.');
+  carregar();
+}
+
+async function salvarEvento(){
+  const titulo=document.getElementById('fTitulo').value.trim();
+  const data=document.getElementById('fData').value;
+  if(!titulo||!data){ aviso('Preencha título e data.',true); return; }
+  const btn=document.getElementById('btnSalvar');
+  btn.disabled=true; btn.textContent='Salvando...';
+  const ev={
+    id:Date.now().toString(36),
+    type:document.getElementById('fTipo').value,
+    title:titulo, date:data,
+    time:document.getElementById('fHora').value,
+    description:document.getElementById('fDesc').value.trim()
+  };
+  eventos.push(ev);
+  const ok=await gravar('Adiciona evento: '+titulo);
+  btn.disabled=false; btn.textContent='Salvar';
+  if(ok){ fechar('modalNovo'); aviso('Evento salvo no GitHub.'); }
+  else{ eventos=eventos.filter(e=>e.id!==ev.id); }
+  render();
+}
+
+async function excluir(id){
+  const ev=eventos.find(e=>e.id===id);
+  if(!ev||!confirm('Excluir "'+ev.title+'"?')) return;
+  const antes=[...eventos];
+  eventos=eventos.filter(e=>e.id!==id);
+  const ok=await gravar('Remove evento: '+ev.title);
+  if(ok){ aviso('Evento excluído.'); } else { eventos=antes; }
+  render();
+}
+
+document.querySelectorAll('.modal-fundo').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('aberto'); }));
+
+carregar();
+</script>
+</body>
+</html>
