@@ -19,6 +19,16 @@
       "description": "licitação - foco no lote 2A de 183 MI",
       "link": "https://1drv.ms/f/c/b61e8f8c2a80ce78/IgA50PxY40pQR7GA1e5-Q1ogAXNhekXMRY7Ebgihr5jlgmw?e=J1IsLR",
       "priority": "alta"
+    },
+    {
+      "id": "mrnhzq1l",
+      "type": "lembrete",
+      "priority": "baixa",
+      "title": "LICITAÇÃO - DNIT - 55MI",
+      "date": "2026-07-23",
+      "time": "10:00",
+      "description": "",
+      "link": "https://1drv.ms/f/c/b61e8f8c2a80ce78/IgDIn_hES8L3TI3pt4_K55bYAdek3aJ8x_Xl0nDGESGUCYk?e=FDBZ0k"
     }
   ]
 }
