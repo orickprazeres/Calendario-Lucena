@@ -136,7 +136,7 @@
   <div class="modal">
     <div class="cabecalho">
       <img src="assets/simbolo-branco.png" alt="">
-      <h3>Novo evento</h3>
+      <h3 id="tituloModalNovo">Novo evento</h3>
       <button onclick="fechar('modalNovo')">×</button>
     </div>
     <div class="corpo">
@@ -201,6 +201,7 @@
     </div>
     <div class="rodape">
       <button class="btn btn-vermelho" id="dBtnExcluir">🗑 Excluir</button>
+      <button class="btn btn-borda" id="dBtnEditar">✎ Editar</button>
       <button class="btn btn-azul" onclick="fechar('modalDetalhe')">Fechar</button>
     </div>
   </div>
@@ -242,7 +243,7 @@
 <script>
 const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 let hoje=new Date(), ano=hoje.getFullYear(), mes=hoje.getMonth();
-let eventos=[], sha=null;
+let eventos=[], sha=null, editandoId=null;
 
 const cfg={
   get repo(){ return localStorage.getItem('cal_repo')||autoRepo(); },
@@ -373,6 +374,8 @@ function irHoje(){ const h=new Date(); ano=h.getFullYear(); mes=h.getMonth(); re
 
 // ---------- Ações ----------
 function abrirNovo(dataPre){
+  editandoId=null;
+  document.getElementById('tituloModalNovo').textContent='Novo evento';
   document.getElementById('fData').value=(typeof dataPre==='string')?dataPre:dataStr(new Date());
   document.getElementById('fTitulo').value='';
   document.getElementById('fHora').value='';
@@ -404,7 +407,22 @@ function abrirDetalhe(id){
   } else linkBloco.style.display='none';
 
   document.getElementById('dBtnExcluir').onclick=()=>{ fechar('modalDetalhe'); excluir(e.id); };
+  document.getElementById('dBtnEditar').onclick=()=>{ fechar('modalDetalhe'); abrirEditar(e.id); };
   document.getElementById('modalDetalhe').classList.add('aberto');
+}
+function abrirEditar(id){
+  const e=eventos.find(x=>x.id===id);
+  if(!e) return;
+  editandoId=id;
+  document.getElementById('tituloModalNovo').textContent='Editar evento';
+  document.getElementById('fTipo').value=e.type;
+  document.getElementById('fTitulo').value=e.title;
+  document.getElementById('fData').value=e.date;
+  document.getElementById('fHora').value=e.time||'';
+  document.getElementById('fDesc').value=e.description||'';
+  document.getElementById('fLink').value=e.link||'';
+  document.getElementById('modalNovo').classList.add('aberto');
+  document.getElementById('fTitulo').focus();
 }
 function abrirConfig(){
   document.getElementById('cRepo').value=cfg.repo;
@@ -429,19 +447,28 @@ async function salvarEvento(){
   if(!titulo||!data){ aviso('Preencha título e data.',true); return; }
   const btn=document.getElementById('btnSalvar');
   btn.disabled=true; btn.textContent='Salvando...';
-  const ev={
-    id:Date.now().toString(36),
+  const dados={
     type:document.getElementById('fTipo').value,
     title:titulo, date:data,
     time:document.getElementById('fHora').value,
     description:document.getElementById('fDesc').value.trim(),
     link:document.getElementById('fLink').value.trim()
   };
-  eventos.push(ev);
-  const ok=await gravar('Adiciona evento: '+titulo);
+  const antes=JSON.parse(JSON.stringify(eventos));
+  let ok, msg;
+  if(editandoId){
+    const i=eventos.findIndex(e=>e.id===editandoId);
+    if(i>=0) eventos[i]={...eventos[i],...dados};
+    ok=await gravar('Edita evento: '+titulo);
+    msg='Evento atualizado no GitHub.';
+  }else{
+    eventos.push({id:Date.now().toString(36),...dados});
+    ok=await gravar('Adiciona evento: '+titulo);
+    msg='Evento salvo no GitHub.';
+  }
   btn.disabled=false; btn.textContent='Salvar';
-  if(ok){ fechar('modalNovo'); aviso('Evento salvo no GitHub.'); }
-  else{ eventos=eventos.filter(e=>e.id!==ev.id); }
+  if(ok){ fechar('modalNovo'); editandoId=null; aviso(msg); }
+  else{ eventos=antes; }
   render();
 }
 
