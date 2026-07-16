@@ -15,6 +15,14 @@
       "date": "2026-07-23",
       "time": "10:30",
       "description": "tes tes tes tes"
+    },
+    {
+      "id": "mrngr1g5",
+      "type": "lembrete",
+      "title": "LICITAÇÃO - DNIT 0209/2026 - 376 MI",
+      "date": "2026-07-21",
+      "time": "15:00",
+      "description": ""
     }
   ]
 }
