@@ -6,7 +6,9 @@
       "title": "Reunião de exemplo",
       "date": "2026-07-20",
       "time": "09:00",
-      "description": "Este é um evento de exemplo. Pode excluir."
+      "description": "Este é um evento de exemplo. Pode excluir.",
+      "priority": "baixa",
+      "link": ""
     },
     {
       "id": "mrngvykr",
