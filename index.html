@@ -42,9 +42,9 @@
   .nav-btn{background:var(--azul-claro);color:var(--azul);border:none;border-radius:6px;width:34px;height:34px;font-size:1.1rem;cursor:pointer}
   .nav-btn:hover{background:var(--azul);color:#fff}
 
-  .semana,.grade{display:grid;grid-template-columns:repeat(7,1fr)}
+  .semana,.grade{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
   .semana div{padding:10px 6px;text-align:center;font-size:.8rem;color:var(--cinza);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--borda)}
-  .dia{min-height:96px;border-right:1px solid var(--borda);border-bottom:1px solid var(--borda);padding:6px;cursor:pointer;position:relative;transition:background .15s}
+  .dia{min-height:96px;min-width:0;overflow:hidden;border-right:1px solid var(--borda);border-bottom:1px solid var(--borda);padding:6px;cursor:pointer;position:relative;transition:background .15s}
   .dia:nth-child(7n){border-right:none}
   .dia:hover{background:var(--azul-claro)}
   .dia.fora{background:#FAFBFD;color:#B6BFCC;cursor:default}
@@ -52,7 +52,7 @@
   .dia .num{font-size:.85rem;font-weight:bold;color:var(--azul)}
   .dia.fora .num{color:#B6BFCC}
   .dia.hoje .num{background:var(--vermelho);color:#fff;border-radius:50%;display:inline-flex;width:24px;height:24px;align-items:center;justify-content:center}
-  .chip{display:block;font-size:.72rem;margin-top:3px;padding:2px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip{display:block;max-width:100%;font-size:.72rem;margin-top:3px;padding:2px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .chip.reuniao{background:var(--azul-claro);color:var(--azul);border-left:3px solid var(--azul)}
   .chip.lembrete{background:var(--vermelho-claro);color:#B02224;border-left:3px solid var(--vermelho)}
 
@@ -84,6 +84,13 @@
   .linha2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .modal .rodape{padding:0 20px 20px;display:flex;gap:10px;justify-content:flex-end}
   .dica{font-size:.78rem;color:var(--cinza);margin-top:4px}
+  .link-caixa{display:block;padding:10px 12px;background:var(--azul-claro);border:1px solid var(--borda);border-left:3px solid var(--azul);border-radius:6px;color:var(--azul);text-decoration:none;font-size:.9rem;word-break:break-all}
+  .link-caixa:hover{background:#dbe4f2;text-decoration:underline}
+  #dTipo.tipo{display:inline-block;font-size:.68rem;text-transform:uppercase;letter-spacing:1px;padding:3px 10px;border-radius:10px}
+  #dTipo.reuniao{background:var(--azul-claro);color:var(--azul)}
+  #dTipo.lembrete{background:var(--vermelho-claro);color:#B02224}
+  .chip{cursor:pointer}
+  .lista .evento{cursor:pointer}
 
   #aviso{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--azul);color:#fff;padding:12px 22px;border-radius:8px;display:none;z-index:99;box-shadow:0 4px 14px rgba(0,0,0,.25)}
   #aviso.erro{background:var(--vermelho)}
@@ -158,10 +165,43 @@
         <label>Descrição (opcional)</label>
         <textarea id="fDesc" rows="2"></textarea>
       </div>
+      <div class="campo">
+        <label>Link da reunião ou arquivo (opcional)</label>
+        <input id="fLink" placeholder="https://... (Teams, Meet, Drive, arquivo do projeto)">
+        <div class="dica">Cole aqui o link da videochamada ou de um arquivo do projeto.</div>
+      </div>
     </div>
     <div class="rodape">
       <button class="btn btn-borda" onclick="fechar('modalNovo')">Cancelar</button>
       <button class="btn btn-azul" id="btnSalvar" onclick="salvarEvento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: detalhes do evento -->
+<div class="modal-fundo" id="modalDetalhe">
+  <div class="modal">
+    <div class="cabecalho">
+      <img src="assets/simbolo-branco.png" alt="">
+      <h3 id="dTipoTitulo">Detalhes do evento</h3>
+      <button onclick="fechar('modalDetalhe')">×</button>
+    </div>
+    <div class="corpo">
+      <span class="tipo" id="dTipo"></span>
+      <h2 id="dTitulo" style="color:var(--azul);font-size:1.25rem;margin:10px 0 4px"></h2>
+      <div class="quando" id="dQuando" style="color:var(--cinza);font-size:.92rem;margin-bottom:12px"></div>
+      <div id="dDescBloco" class="campo" style="display:none">
+        <label>Descrição</label>
+        <div id="dDesc" style="font-size:.92rem;color:#33404F;white-space:pre-wrap"></div>
+      </div>
+      <div id="dLinkBloco" class="campo" style="display:none">
+        <label>Link</label>
+        <a id="dLink" href="#" target="_blank" rel="noopener" class="link-caixa"></a>
+      </div>
+    </div>
+    <div class="rodape">
+      <button class="btn btn-vermelho" id="dBtnExcluir">🗑 Excluir</button>
+      <button class="btn btn-azul" onclick="fechar('modalDetalhe')">Fechar</button>
     </div>
   </div>
 </div>
@@ -296,6 +336,7 @@ function render(){
       c.className='chip '+e.type;
       c.textContent=(e.time?e.time+' ':'')+e.title;
       c.title=e.title+(e.description?' — '+e.description:'');
+      c.onclick=(ev)=>{ ev.stopPropagation(); abrirDetalhe(e.id); };
       d.appendChild(c);
     });
     if(!fora) d.onclick=()=>abrirNovo(ds);
@@ -320,7 +361,8 @@ function renderLista(){
       ${e.description?'<div class="desc"></div>':''}`;
     d.querySelector('h4').textContent=e.title;
     if(e.description) d.querySelector('.desc').textContent=e.description;
-    d.querySelector('.excluir').onclick=()=>excluir(e.id);
+    d.onclick=()=>abrirDetalhe(e.id);
+    d.querySelector('.excluir').onclick=(ev)=>{ ev.stopPropagation(); excluir(e.id); };
     el.appendChild(d);
   });
 }
@@ -335,8 +377,34 @@ function abrirNovo(dataPre){
   document.getElementById('fTitulo').value='';
   document.getElementById('fHora').value='';
   document.getElementById('fDesc').value='';
+  document.getElementById('fLink').value='';
   document.getElementById('modalNovo').classList.add('aberto');
   document.getElementById('fTitulo').focus();
+}
+function abrirDetalhe(id){
+  const e=eventos.find(x=>x.id===id);
+  if(!e) return;
+  document.getElementById('dTipoTitulo').textContent=(e.type==='reuniao'?'Reunião':'Lembrete');
+  const tp=document.getElementById('dTipo');
+  tp.className='tipo '+e.type;
+  tp.textContent=(e.type==='reuniao'?'Reunião':'Lembrete');
+  document.getElementById('dTitulo').textContent=e.title;
+  const [Y,M,D]=e.date.split('-');
+  document.getElementById('dQuando').textContent=D+'/'+M+'/'+Y+(e.time?' às '+e.time:'');
+
+  const descBloco=document.getElementById('dDescBloco');
+  if(e.description){ document.getElementById('dDesc').textContent=e.description; descBloco.style.display='block'; }
+  else descBloco.style.display='none';
+
+  const linkBloco=document.getElementById('dLinkBloco'), a=document.getElementById('dLink');
+  if(e.link){
+    let url=e.link;
+    if(!/^https?:\/\//i.test(url) && !/^mailto:/i.test(url)) url='https://'+url;
+    a.href=url; a.textContent=e.link; linkBloco.style.display='block';
+  } else linkBloco.style.display='none';
+
+  document.getElementById('dBtnExcluir').onclick=()=>{ fechar('modalDetalhe'); excluir(e.id); };
+  document.getElementById('modalDetalhe').classList.add('aberto');
 }
 function abrirConfig(){
   document.getElementById('cRepo').value=cfg.repo;
@@ -366,7 +434,8 @@ async function salvarEvento(){
     type:document.getElementById('fTipo').value,
     title:titulo, date:data,
     time:document.getElementById('fHora').value,
-    description:document.getElementById('fDesc').value.trim()
+    description:document.getElementById('fDesc').value.trim(),
+    link:document.getElementById('fLink').value.trim()
   };
   eventos.push(ev);
   const ok=await gravar('Adiciona evento: '+titulo);
