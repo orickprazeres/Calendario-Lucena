@@ -84,6 +84,10 @@
   .linha2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .modal .rodape{padding:0 20px 20px;display:flex;gap:10px;justify-content:flex-end}
   .dica{font-size:.78rem;color:var(--cinza);margin-top:4px}
+  .prio{display:inline-block;font-size:.66rem;text-transform:uppercase;letter-spacing:.5px;font-weight:bold;padding:2px 8px;border-radius:10px;margin-left:6px}
+  .prio.alta{background:#FDE0E0;color:#B02224}
+  .prio.media{background:#FCEFD6;color:#9A6B10}
+  .prio.baixa{background:#E3ECE4;color:#3E6B4A}
   .link-caixa{display:block;padding:10px 12px;background:var(--azul-claro);border:1px solid var(--borda);border-left:3px solid var(--azul);border-radius:6px;color:var(--azul);text-decoration:none;font-size:.9rem;word-break:break-all}
   .link-caixa:hover{background:#dbe4f2;text-decoration:underline}
   #dTipo.tipo{display:inline-block;font-size:.68rem;text-transform:uppercase;letter-spacing:1px;padding:3px 10px;border-radius:10px}
@@ -151,6 +155,14 @@
         <label>Título</label>
         <input id="fTitulo" placeholder="Ex.: Reunião com equipe de obra">
       </div>
+      <div class="campo">
+        <label>Prioridade</label>
+        <select id="fPrioridade">
+          <option value="alta">Alta</option>
+          <option value="media" selected>Média</option>
+          <option value="baixa">Baixa</option>
+        </select>
+      </div>
       <div class="linha2">
         <div class="campo">
           <label>Data</label>
@@ -187,7 +199,7 @@
       <button onclick="fechar('modalDetalhe')">×</button>
     </div>
     <div class="corpo">
-      <span class="tipo" id="dTipo"></span>
+      <span class="tipo" id="dTipo"></span><span class="prio" id="dPrio"></span>
       <h2 id="dTitulo" style="color:var(--azul);font-size:1.25rem;margin:10px 0 4px"></h2>
       <div class="quando" id="dQuando" style="color:var(--cinza);font-size:.92rem;margin-bottom:12px"></div>
       <div id="dDescBloco" class="campo" style="display:none">
@@ -355,7 +367,8 @@ function renderLista(){
     const d=document.createElement('div');
     d.className='evento';
     const [Y,M,D]=e.date.split('-');
-    d.innerHTML=`<span class="tipo ${e.type}">${e.type==='reuniao'?'Reunião':'Lembrete'}</span>
+    const p=e.priority||'media';
+    d.innerHTML=`<span class="tipo ${e.type}">${e.type==='reuniao'?'Reunião':'Lembrete'}</span><span class="prio ${p}">${rotuloPrio(p)}</span>
       <button class="excluir" title="Excluir">🗑</button>
       <h4></h4>
       <div class="quando">${D}/${M}/${Y}${e.time?' às '+e.time:''}</div>
@@ -368,6 +381,7 @@ function renderLista(){
   });
 }
 
+function rotuloPrio(p){ return p==='alta'?'Alta':p==='baixa'?'Baixa':'Média'; }
 function dataStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function mudarMes(n){ mes+=n; if(mes<0){mes=11;ano--;} if(mes>11){mes=0;ano++;} render(); }
 function irHoje(){ const h=new Date(); ano=h.getFullYear(); mes=h.getMonth(); render(); }
@@ -377,6 +391,7 @@ function abrirNovo(dataPre){
   editandoId=null;
   document.getElementById('tituloModalNovo').textContent='Novo evento';
   document.getElementById('fData').value=(typeof dataPre==='string')?dataPre:dataStr(new Date());
+  document.getElementById('fPrioridade').value='media';
   document.getElementById('fTitulo').value='';
   document.getElementById('fHora').value='';
   document.getElementById('fDesc').value='';
@@ -391,6 +406,8 @@ function abrirDetalhe(id){
   const tp=document.getElementById('dTipo');
   tp.className='tipo '+e.type;
   tp.textContent=(e.type==='reuniao'?'Reunião':'Lembrete');
+  const pr=e.priority||'media', dp=document.getElementById('dPrio');
+  dp.className='prio '+pr; dp.textContent='Prioridade '+rotuloPrio(pr);
   document.getElementById('dTitulo').textContent=e.title;
   const [Y,M,D]=e.date.split('-');
   document.getElementById('dQuando').textContent=D+'/'+M+'/'+Y+(e.time?' às '+e.time:'');
@@ -416,6 +433,7 @@ function abrirEditar(id){
   editandoId=id;
   document.getElementById('tituloModalNovo').textContent='Editar evento';
   document.getElementById('fTipo').value=e.type;
+  document.getElementById('fPrioridade').value=e.priority||'media';
   document.getElementById('fTitulo').value=e.title;
   document.getElementById('fData').value=e.date;
   document.getElementById('fHora').value=e.time||'';
@@ -449,6 +467,7 @@ async function salvarEvento(){
   btn.disabled=true; btn.textContent='Salvando...';
   const dados={
     type:document.getElementById('fTipo').value,
+    priority:document.getElementById('fPrioridade').value,
     title:titulo, date:data,
     time:document.getElementById('fHora').value,
     description:document.getElementById('fDesc').value.trim(),
